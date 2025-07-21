@@ -34,6 +34,8 @@ class DummyEnv(BaseEnv):
         self.init_task_config = init_task_config
         self.camera_list = self.init_task_config["recording_setting"]["camera_list"]
         self.specific_task_name = self.init_task_config["specific_task_name"]
+        self.action_horizon = 16
+        self.actions = None
 
         # Initialize the scene layout according to task_file
         self.load(task_file)
@@ -89,7 +91,7 @@ class DummyEnv(BaseEnv):
             data_keys = {
                 "camera": {
                     "camera_prim_list": self.camera_list,
-                    "render_depth": False,
+                    "render_depth": True,
                     "render_semantic": False,
                 },
                 # "pose": ["/World/G1/gripper_center"],
@@ -104,13 +106,16 @@ class DummyEnv(BaseEnv):
 
     def step(self, actions):
         observaion = None
-        self.current_step += 1
         need_update = False
-        if self.current_step != 1 and self.current_step % 30 == 0:
-            observaion = self.get_observation()
-            self.task.step(self)
-            self.action_update()
+        self.current_step += 1
+        chunk_id = self.current_step % self.action_horizon
+        if chunk_id == 0:
+            observaion = self.get_observation()  
             need_update = True
+        if chunk_id == 1:
+            self.actions = actions
+        self.robot.set_init_pose(self.actions[chunk_id - 1])
+        
 
         return observaion, self.has_done, need_update, self.task.task_progress
 

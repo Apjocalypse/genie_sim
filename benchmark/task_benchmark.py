@@ -8,6 +8,8 @@ import numpy as np
 import glob
 import json, uuid
 from collections import defaultdict
+import torch
+from typing import List, Literal
 
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -23,6 +25,8 @@ from robot.genie_robot import IsaacSimRpcRobot
 from policy.base import BasePolicy
 from benchmark.policy.demopolicy import DemoPolicy
 from benchmark.policy.baselinepolicy import BaselinePolicy
+from gr00t.experiment.data_config import DATA_CONFIG_MAP
+from gr00t.model.policy import Gr00tPolicy
 import ader
 
 from layout.task_generate import TaskGenerator
@@ -178,7 +182,7 @@ class TaskBenchmark(object):
         for callback in start_callbacks:  # before task
             callback(env, None)
 
-        observaion = env.reset()  # 1st frame
+        observation = env.reset()  # 1st frame
         self.single_evaluate_ret["task_name"] = self.task_config["task"]
         self.single_evaluate_ret["model_path"] = ""
         self.single_evaluate_ret["start_time"] = base_utils.TIMENOW()
@@ -193,10 +197,14 @@ class TaskBenchmark(object):
         try:
             env.do_eval_action()
             while rclpy.ok():
-                action = self.policy.act(observaion, step_num=env.current_step)
-                for callback in step_callbacks:  # during task
-                    callback(env, action)
-                observaion, done, need_update, task_progress = env.step(action)
+                if observation is not None:
+                    action = self.policy.act(observation, step_num=env.current_step)
+                else:
+                    action = None
+                # for callback in step_callbacks:  # during task
+                #     callback(env, action)
+                observation, done, need_update, task_progress = env.step(action)
+                print(observation)
                 logger.info(f"STEP {env.current_step}")
                 if need_update:
                     self.update_eval_ret(task_progress)
@@ -306,6 +314,12 @@ class TaskBenchmark(object):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "--model_path",
+        type=str,
+        default="ckpt/",
+        help="The client host",
+    )
+    parser.add_argument(
         "--client_host",
         type=str,
         default="localhost:50051",
@@ -321,7 +335,7 @@ def main():
         "--policy_class",
         type=str,
         default="DemoPolicy",
-        choices=["DemoPolicy", "BaselinePolicy"],
+        choices=["DemoPolicy", "BaselinePolicy", "Gr00tPolicy"],
         help="Choose the policy class",
     )
     parser.add_argument(
@@ -350,6 +364,12 @@ def main():
         help="Set gripper control type, 0-position control, 1-velocity control",
     )
     parser.add_argument(
+        "--data_config",
+        type=str,
+        default="agibot_genie_sim",
+        help="Data config to use.",
+    )
+    parser.add_argument(
         "--fps", type=int, default=30, help="Set the fps of the recording"
     )
     parser.add_argument("--record", action="store_true", help="Enable data recording")
@@ -363,6 +383,19 @@ def main():
         policy = DemoPolicy(task_name=args.task_name)
     elif args.policy_class == "BaselinePolicy":
         policy = BaselinePolicy(task_name=args.task_name)
+    elif args.policy_class == "Gr00tPolicy":
+        data_config = DATA_CONFIG_MAP[args.data_config]
+        modality_config = data_config.modality_config()
+        modality_transform = data_config.transform()
+        policy = Gr00tPolicy(
+            task_name=args.task_name,
+            model_path=args.model_path,
+            modality_config=modality_config,
+            modality_transform=modality_transform,
+            embodiment_tag=args.data_config,
+            device="cuda" if torch.cuda.is_available() else "cpu",
+            load_meta=False
+        )
     else:
         raise ValueError("Invalid policy class: {}".format(args.policy_class))
 

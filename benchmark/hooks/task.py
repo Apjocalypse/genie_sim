@@ -51,6 +51,14 @@ class TaskHook(HookBase):
         print("SET INIT POS", init_joint_state)
 
     def step_callback(self, env, action):
+        # env.robot.close_gripper(id='left', force=50)
+        # print("CLOSE LEFT GRIPPER")
+        # env.robot.close_gripper(id='right', force=50)
+        # print("CLOSE RIGHT GRIPPER")
+        # env.robot.open_gripper(id='left', width=0.1)
+        # print("OPEN LEFT GRIPPER")
+        # env.robot.open_gripper(id='right', width=0.1)
+        # print("CLOSE LEFT GRIPPER")
         pass
 
     def end_callback(self, env, _):

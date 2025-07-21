@@ -1,0 +1,44 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "benchmark",
+            "type": "debugpy",
+            "python": "/root/assets/gr00t/bin/python",
+            "request": "launch",
+            "program": "benchmark/task_benchmark.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--model_path=/root/workspace/main/ckpts/gr00t_challenge",
+                "--policy_class=Gr00tPolicy",
+            ],
+            "env": {
+                "HF_HOME": "/root/assets/huggingface",
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "open_loop",
+            "type": "debugpy",
+            "python": "/root/assets/gr00t/bin/python",
+            "request": "launch",
+            "program": "scripts/eval_policy_genie.py",
+            "cwd": "${workspaceFolder}/Isaac-GR00T-challenge",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--model_path=/root/workspace/main/ckpts/gr00t_challenge",
+                "--dataset_root_dir=/robot/embodied-perception-data/user/hb/data/Manipulation-SimData",
+                "--data_config=agibot_genie1",
+                "--embodiment_tag=agibot_genie1",
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/Isaac-GR00T-challenge",
+                "HF_HOME": "/root/assets/huggingface",
+            }
+        }
+    ]
+}

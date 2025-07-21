@@ -14,7 +14,7 @@ else
 fi
 
 xhost +
-docker run -itd --name genie_sim_benchmark \
+sudo docker run -itd --name genie_sim_benchmark \
     --entrypoint ./scripts/entrypoint.sh \
     --gpus all \
     --rm \

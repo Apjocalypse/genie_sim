@@ -454,7 +454,7 @@ class ObservationService(sim_observation_service_pb2_grpc.SimObservationService)
         stopRecording = req.stopRecording
         fps = req.fps
         task_name = req.task_name
-        camera_prim_list = []
+        camera_prim_list = req.CameraReq.camera_prim_list
         object_prim = req.objectPrims
         result = self.server_function.blocking_start_server(
             data={
@@ -529,6 +529,7 @@ class ObservationService(sim_observation_service_pb2_grpc.SimObservationService)
                 rsp.camera.append(camera_data)
         if isJoint:
             joint_positions = result["joint"]
+            print(joint_positions)
             for joint_name in joint_positions:
                 joint_state = sim_observation_service_pb2.JointState()
                 joint_state.name = joint_name
